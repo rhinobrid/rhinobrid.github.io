@@ -2,7 +2,7 @@
 import { type CollectionEntry, render } from 'astro:content'
 
 import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
-import PostLayout from '@/layouts/BlogPost.astro'
+import TweetPost from '@/layouts/TweetPost.astro'
 
 export const prerender = true
 
@@ -15,8 +15,8 @@ export async function getStaticPaths() {
 }
 
 type Props = {
-  post: CollectionEntry<'blog'>
-  posts: CollectionEntry<'blog'>[]
+  post: CollectionEntry<'tweets'>
+  posts: CollectionEntry<'tweets'>[]
 }
 
 const { post, posts } = Astro.props

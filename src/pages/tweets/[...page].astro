@@ -21,7 +21,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths
 
 interface Props {
-  page: Page<CollectionEntry<'blog'>>
+  page: Page<CollectionEntry<'tweets'>>
   uniqueTags: string[]
   collectionsCount: number
 }
@@ -30,7 +30,7 @@ const { page, uniqueTags, collectionsCount } = Astro.props
 
 const meta = {
   description: 'Some posts or archives of my blog',
-  title: 'Blog'
+  title: 'Tweets'
 }
 
 const paginationProps = {

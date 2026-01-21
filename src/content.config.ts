@@ -51,6 +51,15 @@ const tweets = defineCollection({
       title: z.string().max(60).optional(),
       description: z.string().max(160).optional(),
       publishDate: z.coerce.date(),
+
+      // Tweet-specific metadata
+      handle: z.string().optional().default('cworld_dev'),
+      avatar: z.string().optional().default('/assets/avatar.png'),
+      likes: z.union([z.number(), z.string()]).optional().default(0),
+      retweets: z.union([z.number(), z.string()]).optional().default(0),
+      replies: z.union([z.number(), z.string()]).optional().default(0),    
+      // Optional: Allow embedding images in the tweet body
+      image: z.string().optional(),        
       // Optional
       updatedDate: z.coerce.date().optional(),
       heroImage: z
