@@ -5,47 +5,62 @@ import type { CollectionEntry } from 'astro:content'
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { getBlogCollection, getUniqueTags, sortMDByDate } from 'astro-pure/server'
 import { Button } from 'astro-pure/user'
+import { getTweetsCollection } from '@/utils/tweets'
+import CustomTweetCardList from '@/components/tweets/CustomTweetCardList.astro'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import config from '@/site-config'
 
 export const prerender = true
 
 export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  // @ts-ignore - Astro content layer type inference issue
   const allPosts = await getBlogCollection()
-  const allPostsByDate = sortMDByDate(allPosts)
-  const uniqueTags = getUniqueTags(allPostsByDate)
-
-  return uniqueTags.flatMap((tag) => {
-    const filterPosts = allPostsByDate.filter((post) => post.data.tags.includes(tag))
-    return paginate(filterPosts, {
+  // @ts-ignore - Astro content layer type inference issue  
+  const allTweets = await getTweetsCollection()
+  
+  // Get all unique tags from BOTH blog and tweets
+  const blogTags = getUniqueTags(allPosts)
+  // @ts-ignore - Astro content layer type inference issue
+  const tweetTags = [...new Set(allTweets.flatMap(t => t.data.tags))]
+  const allTags = [...new Set([...blogTags, ...tweetTags])]
+  
+  return allTags.flatMap((tag) => {
+    // @ts-ignore - Astro content layer type inference issue
+    const taggedPosts = allPosts.filter((post) => post.data.tags.includes(tag))
+    return paginate(taggedPosts, {
       pageSize: config.content.blogPageSize,
       params: { tag }
     })
   })
 }
 
-interface Props {
-  page: Page<CollectionEntry<'blog'>>
-}
+// @ts-ignore - Astro props type inference issue
+const page = Astro.props.page as Page<CollectionEntry<'blog'>>
+const tag = Astro.params.tag as string
 
-const { page } = Astro.props
-const { tag } = Astro.params
+// Fetch tweets for this tag
+// @ts-ignore - Astro content layer type inference issue
+const allTweets = await getTweetsCollection()
+// @ts-ignore - Astro content layer type inference issue
+const taggedTweets = allTweets
+  .filter((t) => t.data.tags.includes(tag))
+  .sort((a, b) => new Date(b.data.publishDate).valueOf() - new Date(a.data.publishDate).valueOf())
 
 const meta = {
-  description: `View all posts with the tag - ${tag}`,
+  description: `View all posts and tweets with the tag - ${tag}`,
   title: `Tag: ${tag}`
 }
 
 const paginationProps = {
   ...(page.url.prev && {
     prevUrl: {
-      text: `← Previous Tags`,
+      text: `← Previous`,
       url: page.url.prev
     }
   }),
   ...(page.url.next && {
     nextUrl: {
-      text: `Next Tags →`,
+      text: `Next →`,
       url: page.url.next
     }
   })
@@ -55,18 +70,63 @@ const paginationProps = {
 <PageLayout {meta}>
   <Button title='Back' href='/blog' variant='back' />
   <main class='mt-6 lg:mt-10'>
-    <div id='content-header' class='animate'>
+    <div id='content-header' class='animate mb-8'>
       <h1 class='mb-6 flex items-end gap-x-2 text-3xl font-medium'>
         Tags:
         <span class='text-2xl'>#{tag}</span>
       </h1>
     </div>
 
-    <section id='content' class='animate' aria-label='Blog post list'>
-      <ul class='flex flex-col gap-y-3 text-start'>
-        {page.data.map((post) => <PostPreview {post} detailed />)}
-      </ul>
-      <Paginator {...paginationProps} />
-    </section>
+    {/* Two column layout on desktop */}
+    <div class='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+      
+      {/* Left: Tweets */}
+      <section class='tweets-section'>
+        <h2 class='text-xl font-medium mb-4 flex items-center gap-2'>
+          <span class='text-lg'>🐦</span>
+          <span>Tweets</span>
+          {taggedTweets.length > 0 && (
+            <span class='text-muted-foreground text-sm font-normal'>({taggedTweets.length})</span>
+          )}
+        </h2>
+        
+        {taggedTweets.length > 0 ? (
+          <CustomTweetCardList 
+            tweets={taggedTweets} 
+            initialCount={5}
+            increment={5}
+            tag={tag}
+          />
+        ) : (
+          <p class='text-muted-foreground py-8 text-center'>
+            No tweets with this tag.
+          </p>
+        )}
+      </section>
+      
+      {/* Right: Blog */}
+      <section class='blog-section'>
+        <h2 class='text-xl font-medium mb-4 flex items-center gap-2'>
+          <span class='text-lg'>📝</span>
+          <span>Blog</span>
+          <span class='text-muted-foreground text-sm font-normal'>({page.total})</span>
+        </h2>
+        
+        {page.data.length > 0 ? (
+          <>
+            <ul class='flex flex-col gap-y-3 text-start'>
+              {/* @ts-ignore - Astro content layer type inference issue */}
+              {page.data.map((post) => <PostPreview {post} detailed />)}
+            </ul>
+            <Paginator {...paginationProps} />
+          </>
+        ) : (
+          <p class='text-muted-foreground py-8 text-center'>
+            No blog posts with this tag.
+          </p>
+        )}
+      </section>
+      
+    </div>
   </main>
 </PageLayout>

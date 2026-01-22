@@ -1,0 +1,129 @@
+---
+/**
+ * Custom Tweet Card List Component
+ * 
+ * Displays a list of tweet cards with "Show 5 more" functionality.
+ * 
+ * Features:
+ * - Shows initial N tweets (default: 5)
+ * - "Show 5 more" button reveals hidden tweets
+ * - "View all tweets" link for full pagination
+ * - Client-side JavaScript for reveal functionality
+ */
+
+import type { CollectionEntry } from 'astro:content'
+import { render } from 'astro:content'
+import CustomTweetCard from './CustomTweetCard.astro'
+
+interface Props {
+  tweets: CollectionEntry<'tweets'>[]
+  initialCount?: number  // Default: 5
+  increment?: number     // Default: 5
+  tag?: string           // For "View all" link
+}
+
+const { tweets, initialCount = 5, increment = 5, tag } = Astro.props
+
+// Pre-render all tweet content
+const renderedTweets = await Promise.all(
+  tweets.map(async (tweet) => {
+    const { Content } = await render(tweet)
+    return { tweet, Content }
+  })
+)
+
+const visibleCount = Math.min(initialCount, renderedTweets.length)
+const hiddenCount = renderedTweets.length - visibleCount
+const canShowMore = hiddenCount > 0
+---
+
+<div class='tweet-card-list' data-increment={increment}>
+  {renderedTweets.map(({ tweet, Content }, index) => (
+    <div 
+      class='tweet-item' 
+      data-index={index}
+      style={index >= initialCount ? 'display: none;' : ''}
+    >
+      <a href={`/tweets/${tweet.id}`} class='tweet-link'>
+        <CustomTweetCard tweet={tweet}>
+          <Content />
+        </CustomTweetCard>
+      </a>
+    </div>
+  ))}
+  
+  {canShowMore && (
+    <button 
+      class='show-more-btn' 
+      onclick='showMoreTweets(this)'
+      data-remaining={hiddenCount}
+    >
+      Show {Math.min(increment, hiddenCount)} more →
+    </button>
+  )}
+  
+  {tag && renderedTweets.length > 0 && (
+    <a 
+      href={`/tags/${tag}/tweets`} 
+      class='view-all-link'
+    >
+      View all {renderedTweets.length} tweets →
+    </a>
+  )}
+</div>
+
+<script>
+  function showMoreTweets(btn: HTMLButtonElement) {
+    const list = btn.closest('.tweet-card-list') as HTMLElement
+    const increment = parseInt(list.dataset.increment || '5')
+    
+    // Find hidden items
+    const hiddenItems = list.querySelectorAll<HTMLElement>('.tweet-item[style="display: none;"], .tweet-item[data-index][style*="display: none"]')
+    
+    // Show next batch
+    let shown = 0
+    hiddenItems.forEach((item) => {
+      if (shown < increment) {
+        item.style.display = ''
+        shown++
+      }
+    })
+    
+    // Update button text or hide
+    const remaining = list.querySelectorAll<HTMLElement>('.tweet-item[style="display: none;"], .tweet-item[data-index][style*="display: none"]')
+    
+    if (remaining.length === 0) {
+      btn.style.display = 'none'
+    } else {
+      const toShow = Math.min(increment, remaining.length)
+      btn.textContent = `Show ${toShow} more →`
+    }
+  }
+  
+  // Attach to window for inline onclick
+  (window as any).showMoreTweets = showMoreTweets
+</script>
+
+<style>
+  .tweet-card-list {
+    @apply flex flex-col;
+  }
+  
+  .tweet-item {
+    @apply transition-all duration-200;
+  }
+  
+  .show-more-btn {
+    @apply w-full py-3 px-4 mt-2 mb-4 rounded-lg bg-muted text-muted-foreground 
+           text-sm font-medium transition-colors cursor-pointer
+           hover:bg-muted/80 hover:text-foreground;
+  }
+  
+  .view-all-link {
+    @apply block py-2 text-sm text-primary hover:underline text-center;
+  }
+  
+  .tweet-link {
+    @apply no-underline text-foreground;
+  }
+</style>

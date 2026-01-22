@@ -1,74 +1,145 @@
 ---
-import type { MarkdownHeading } from 'astro'
+/**
+ * Tweet Post Layout
+ * 
+ * Layout for individual tweet pages with centered layout (15% margins).
+ * 
+ * Features:
+ * - No TOC (as requested)
+ * - Full width with 15% margins (70% max-width)
+ * - Center aligned layout
+ * - Header with author info and date
+ * - Tags displayed as hashtags
+ * - Previous/Next navigation
+ * - Based on BlogPost layout but simplified
+ * 
+ * @see /src/layouts/BlogPost.astro for reference
+ */
+
 import type { CollectionEntry } from 'astro:content'
 
-// Plugin styles
-import 'katex/dist/katex.min.css'
-
-import { MediumZoom } from 'astro-pure/advanced'
-import { ArticleBottom, Copyright, Hero, TOC } from 'astro-pure/components/pages'
+import { BackToTop } from 'astro-pure/components/pages'
+import { Button, FormattedDate } from 'astro-pure/user'
+import { getFormattedDate } from 'astro-pure/utils'
 import config from 'virtual:config'
-import PageLayout from '@/layouts/ContentLayout.astro'
-import { Comment, PageInfo } from '@/components/waline'
+import PageLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
-  post: CollectionEntry<'tweets'>
-  posts: CollectionEntry<'tweets'>[]
-  headings: MarkdownHeading[]
-  remarkPluginFrontmatter: Record<string, unknown>
+  tweet: CollectionEntry<'tweets'>
+  prevTweet?: CollectionEntry<'tweets'>
+  nextTweet?: CollectionEntry<'tweets'>
 }
 
-const {
-  post: { id, data },
-  posts,
-  headings,
-  remarkPluginFrontmatter
-} = Astro.props
+const { tweet, prevTweet, nextTweet } = Astro.props
+const { publishDate, tags } = tweet.data
 
-const {
-  description,
-  heroImage,
-  publishDate,
-  title,
-  updatedDate,
-  draft: isDraft,
-  comment: enableComment
-} = data
+// Generate author handle from config
+const authorHandle = config.author.toLowerCase().replace(/\s+/g, '')
 
-const socialImage = heroImage
-  ? typeof heroImage.src === 'string'
-    ? heroImage.src
-    : heroImage.src.src
-  : config.socialCard
-const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString()
-const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-text-opacity))'
+// Format date with time
+const formattedDate = getFormattedDate(publishDate, {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
+const fullDateTitle = new Date(publishDate).toLocaleString(config.locale.dateLocale, {
+  dateStyle: 'full',
+  timeStyle: 'short'
+})
+
+// Format prev/next tweet dates
+const prevDate = prevTweet ? getFormattedDate(prevTweet.data.publishDate, {
+  month: 'short',
+  day: 'numeric'
+}) : null
+
+const nextDate = nextTweet ? getFormattedDate(nextTweet.data.publishDate, {
+  month: 'short',
+  day: 'numeric'
+}) : null
 ---
 
-<PageLayout
-  meta={{ articleDate, description, ogImage: socialImage, title }}
-  highlightColor={primaryColor}
-  back='/tweets'
+<PageLayout 
+  meta={{ 
+    title: `Tweet by ${config.author}`,
+    description: `Tweet from ${formattedDate}`
+  }}
 >
-  {!!headings.length && <TOC {headings} slot='sidebar' />}
-
-  <Hero {data} {remarkPluginFrontmatter} slot='header'>
-    <Fragment slot='description'>
-      {!isDraft && enableComment && <PageInfo comment class='mt-1' />}
-    </Fragment>
-  </Hero>
-
-  <slot />
-
-  <Fragment slot='bottom'>
-    {/* Copyright */}
-    <Copyright {data} />
-    {/* Article recommend */}
-    <ArticleBottom collections={posts} {id} class='mt-3 sm:mt-6' />
-    { /* Comment */
-    !isDraft && enableComment && <Comment class='mt-3 sm:mt-6' />}
-  </Fragment>
-
-  <slot name='bottom-sidebar' slot='bottom-sidebar' />
+  <Button title='Back' href='/tweets' variant='back' />
+  
+  <main class='max-w-[70%] mx-auto mt-6 lg:mt-10'>
+    {/* Tweet Header - Author Info */}
+    <header class='flex items-center gap-4 mb-8 pb-6 border-b border-border'>
+      <div class='flex-shrink-0'>
+        <img 
+          src={config.logo.src} 
+          alt={config.author}
+          class='w-14 h-14 rounded-full object-cover border border-border'
+          loading='eager'
+        />
+      </div>
+      
+      <div class='flex-1 min-w-0'>
+        <div class='flex items-baseline gap-2 flex-wrap'>
+          <span class='font-bold text-xl text-foreground'>{config.author}</span>
+          <span class='text-muted-foreground'>@{authorHandle}</span>
+        </div>
+        <time 
+          datetime={publishDate.toISOString()} 
+          class='text-sm text-muted-foreground mt-1 block'
+          title={fullDateTitle}
+        >
+          {formattedDate}
+        </time>
+      </div>
+    </header>
+    
+    {/* Tweet Content */}
+    <article class='text-lg leading-relaxed text-foreground/90 prose-p:my-4 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-headings:font-medium prose-headings:mt-6 prose-headings:mb-3 prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4 prose-blockquote:italic prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:text-sm overflow-x-hidden'>
+      <slot />
+    </article>
+    
+    {/* Tags */}
+    {tags.length > 0 && (
+      <footer class='mt-8 pt-6 border-t border-border'>
+        <div class='flex flex-wrap gap-2'>
+          {tags.map((tag: string) => (
+            <a href={`/tags/${tag}`} class='text-primary text-sm hover:underline cursor-pointer transition-colors'>
+              #{tag}
+            </a>
+          ))}
+        </div>
+      </footer>
+    )}
+    
+    {/* Navigation */}
+    <nav class='mt-8 pt-6 border-t border-border flex justify-between'>
+      <div class='flex-1'>
+        {prevTweet && (
+          <Button 
+            title={`← Tweet from ${prevDate}`}
+            href={`/tweets/${prevTweet.id}`}
+            variant='back'
+            class='min-w-[140px]'
+          />
+        )}
+      </div>
+      
+      <div class='flex-1 text-right'>
+        {nextTweet && (
+          <Button 
+            title={`Tweet from ${nextDate} →`}
+            href={`/tweets/${nextTweet.id}`}
+            variant='ahead'
+            class='min-w-[140px]'
+          />
+        )}
+      </div>
+    </nav>
+  </main>
+  
+  <BackToTop />
 </PageLayout>
-
-{config.integ.mediumZoom.enable && <MediumZoom />}

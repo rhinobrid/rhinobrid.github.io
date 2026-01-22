@@ -1,0 +1,54 @@
+---
+/**
+ * Individual Tweet Page
+ * 
+ * Renders a single tweet with the TweetPost layout.
+ * 
+ * Features:
+ * - Dynamic routing for all tweets
+ * - Previous/next navigation
+ * - Content rendering with Astro's content layer
+ * - Full TypeScript support
+ */
+
+import type { CollectionEntry } from 'astro:content'
+
+import { 
+  getTweetsCollection, 
+  sortTweetsByDate 
+} from '@/utils/tweets'
+import { render } from 'astro:content'
+import TweetPostLayout from '@/layouts/TweetPost.astro'
+
+export const prerender = true
+
+export async function getStaticPaths() {
+  const tweets = sortTweetsByDate(await getTweetsCollection())
+  
+  return tweets.map((tweet, index) => ({
+    params: { slug: tweet.id },
+    props: { 
+      tweet, 
+      prevTweet: tweets[index - 1],
+      nextTweet: tweets[index + 1]
+    }
+  }))
+}
+
+interface Props {
+  tweet: CollectionEntry<'tweets'>
+  prevTweet?: CollectionEntry<'tweets'>
+  nextTweet?: CollectionEntry<'tweets'>
+}
+
+const { tweet, prevTweet, nextTweet } = Astro.props
+const { Content } = await render(tweet)
+---
+
+<TweetPostLayout 
+  tweet={tweet} 
+  prevTweet={prevTweet} 
+  nextTweet={nextTweet}
+>
+  <Content />
+</TweetPostLayout>

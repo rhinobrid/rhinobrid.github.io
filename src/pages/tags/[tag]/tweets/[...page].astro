@@ -1,0 +1,101 @@
+---
+import type { GetStaticPaths, Page } from 'astro'
+import type { CollectionEntry } from 'astro:content'
+
+import { Button } from 'astro-pure/user'
+import { getTweetsCollection, sortTweetsByDate, getUniqueTags } from '@/utils/tweets'
+import CustomTweetCardList from '@/components/tweets/CustomTweetCardList.astro'
+import PageLayout from '@/layouts/BaseLayout.astro'
+import config from '@/site-config'
+
+export const prerender = true
+
+const TWEETS_PER_PAGE = 10
+
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  const allTweets = await getTweetsCollection()
+  const allTweetsByDate = sortTweetsByDate(allTweets)
+  const uniqueTags = getUniqueTags(allTweets)
+  
+  return uniqueTags.flatMap((tag) => {
+    const taggedTweets = allTweetsByDate.filter(tweet => tweet.data.tags.includes(tag))
+    return paginate(taggedTweets, {
+      pageSize: TWEETS_PER_PAGE,
+      params: { tag }
+    })
+  })
+}
+
+interface Props {
+  page: Page<CollectionEntry<'tweets'>>
+}
+
+const { page } = Astro.props
+const { tag } = Astro.params
+
+const meta = {
+  description: `View all tweets with the tag - ${tag}`,
+  title: `Tag: #${tag} - Tweets`
+}
+
+const paginationProps = {
+  ...(page.url.prev && {
+    prevUrl: {
+      text: `← Previous`,
+      url: page.url.prev
+    }
+  }),
+  ...(page.url.next && {
+    nextUrl: {
+      text: `Next →`,
+      url: page.url.next
+    }
+  })
+}
+---
+
+<PageLayout {meta}>
+  <Button title='Back' href={`/tags/${tag}`} variant='back' />
+  <main class='mt-6 lg:mt-10'>
+    <div id='content-header' class='animate mb-8'>
+      <h1 class='mb-6 flex items-end gap-x-2 text-3xl font-medium'>
+        Tag:
+        <span class='text-2xl'>#{tag}</span>
+      </h1>
+      <p class='text-muted-foreground'>
+        Showing {page.start + 1}-{Math.min(page.end + 1, page.total)} of {page.total} tweets
+      </p>
+    </div>
+
+    <section id='tweets-feed' class='animate'>
+      {page.data.length > 0 ? (
+        <>
+          <CustomTweetCardList 
+            tweets={page.data} 
+            initialCount={page.data.length}
+          />
+          
+          {/* Pagination */}
+          {(page.url.prev || page.url.next) && (
+            <nav class='mt-6 flex items-center gap-x-4'>
+              {page.url.prev && (
+                <a class='me-auto py-2' data-astro-prefetch href={page.url.prev}>
+                  ← Previous
+                </a>
+              )}
+              {page.url.next && (
+                <a class='ms-auto py-2' data-astro-prefetch href={page.url.next}>
+                  Next →
+                </a>
+              )}
+            </nav>
+          )}
+        </>
+      ) : (
+        <p class='text-muted-foreground py-8 text-center'>
+          No tweets with this tag.
+        </p>
+      )}
+    </section>
+  </main>
+</PageLayout>
