@@ -63,7 +63,7 @@ export function groupTweetsByYear(
     }
     acc.get(year)!.push(tweet)
     return acc
-  }, new Map<number, CollectionEntry<'tweets'>[]>())
+  }, new Map<number, CollectionEntry<'microposts'>[]>())
 
   return Array.from(grouped.entries()).sort((a, b) => b[0] - a[0])
 }

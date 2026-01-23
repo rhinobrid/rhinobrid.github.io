@@ -1,3 +1,7 @@
+## Content Collections
+### Microposts
+The microposts collection is designed for tweet-like short posts. It has a minimal required schema (only publishDate), with optional fields like title, description, updatedDate, etc., to maintain compatibility with the theme's utilities while keeping content creation simple.
+
 # Astro Theme Pure
 
 English | [简体中文](./README-zh-CN.md)

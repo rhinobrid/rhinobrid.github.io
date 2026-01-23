@@ -59,13 +59,28 @@ const docs = defineCollection({
 // Define microposts collection
 const microposts = defineCollection({
   loader: glob({ base: './src/content/tweets', pattern: '**/*.{md,mdx}' }),
-  schema: () =>
+  schema: ({ image }) =>
     z.object({
       // Required
       publishDate: z.coerce.date(),
       // Optional
+      updatedDate: z.coerce.date().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      heroImage: z
+        .object({
+          src: image(),
+          alt: z.string().optional(),
+          inferSize: z.boolean().optional(),
+          width: z.number().optional(),
+          height: z.number().optional(),
+          color: z.string().optional()
+        })
+        .optional(),
       tags: z.array(z.string()).default([]).transform(removeDupsAndLowerCase),
-      draft: z.boolean().default(false)
+      draft: z.boolean().default(false),
+      language: z.string().optional(),
+      comment: z.boolean().default(false)
     })
 })
 
