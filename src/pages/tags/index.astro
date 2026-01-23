@@ -1,11 +1,24 @@
 ---
 import { getBlogCollection, getUniqueTagsWithCount } from 'astro-pure/server'
+import { getTweetsCollection, getUniqueTagsWithCount as getTweetTagsWithCount } from '@/utils/tweets'
 import { Button } from 'astro-pure/user'
 import { cn } from 'astro-pure/utils'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
 const allPosts = await getBlogCollection()
-const allTags = getUniqueTagsWithCount(allPosts)
+const allTweets = await getTweetsCollection()
+const blogTags = getUniqueTagsWithCount(allPosts)
+const tweetTags = getTweetTagsWithCount(allTweets)
+
+// Merge tags from both blog and tweets, combining counts for duplicates
+const allTagsMap = new Map<string, number>()
+for (const [tag, count] of blogTags) {
+  allTagsMap.set(tag, (allTagsMap.get(tag) || 0) + count)
+}
+for (const [tag, count] of tweetTags) {
+  allTagsMap.set(tag, (allTagsMap.get(tag) || 0) + count)
+}
+const allTags = Array.from(allTagsMap.entries()).sort((a, b) => b[1] - a[1])
 
 const meta = {
   description: "A list of all the topics I've written about in my posts",
@@ -17,7 +30,7 @@ const meta = {
   <Button title='Back' href='/blog' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
-      <h1 class='mb-6 text-3xl font-medium'>Tags</h1>
+      <h1 class='mb-6 text-3xl font-medium'>Tags (Blogs & Tweets)</h1>
     </div>
 
     <div id='content' class='animate'>

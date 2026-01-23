@@ -20,7 +20,7 @@ import config from 'virtual:config'
 import { getFormattedDate } from 'astro-pure/utils'
 
 interface Props {
-  tweet: CollectionEntry<'tweets'>
+  tweet: CollectionEntry<'microposts'>
 }
 
 const { tweet } = Astro.props
@@ -46,7 +46,7 @@ const fullDateTitle = new Date(tweetDate).toLocaleString(config.locale.dateLocal
 
 <article
   id={`tweet-${id}`}
-  class="border border-border bg-card rounded-xl p-5 mb-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+  class="border border-border bg-card rounded-xl px-4 py-4 mb-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md"
 >
   {/* Header: Avatar + Meta */}
   <header class="flex items-start gap-3 mb-4">
@@ -75,13 +75,13 @@ const fullDateTitle = new Date(tweetDate).toLocaleString(config.locale.dateLocal
   </header>
   
   {/* Content */}
-  <div class="text-lg leading-relaxed text-foreground/90 mb-4">
+  <div class="text-lg leading-relaxed text-foreground/90 mb-2">
     <slot />
   </div>
   
   {/* Footer: Tags */}
   {data.tags.length > 0 && (
-    <footer class="pt-4 border-t border-border/50">
+    <footer class="pt-0 border-t border-border/50">
       <div class="flex flex-wrap gap-2">
         {data.tags.map((tag: string) => (
           <a 

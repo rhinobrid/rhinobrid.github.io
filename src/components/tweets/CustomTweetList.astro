@@ -1,15 +1,16 @@
 ---
 /**
  * Custom Tweet List Component
- * 
+ *
  * Groups tweets by year with large year overlays (similar to archives).
- * 
+ *
  * Features:
  * - Year-based grouping with large typography
- * - Sticky year headers
- * - Tweet count per year
+ * - Year count per year
+ * - Lazy loading: show initial N tweets per year with "show more" button
  * - Responsive design
- * 
+ * - Smooth reveal animations
+ *
  * Forward Compatibility Note:
  * If astro-pure releases a built-in TweetList component in the future,
  * consider migrating to their version via swizzling.
@@ -20,76 +21,142 @@ import { render } from 'astro:content'
 import CustomTweetCard from './CustomTweetCard.astro'
 
 interface Props {
-  tweetsByYear: [number, CollectionEntry<'tweets'>[]][]
+  tweetsByYear: [number, CollectionEntry<'microposts'>[]][]
+  initialCount?: number  // Default: 10 tweets per year
+  increment?: number     // Default: 10 tweets per "show more"
 }
 
-const { tweetsByYear } = Astro.props
+const { tweetsByYear, initialCount = 10, increment = 10 } = Astro.props
+
+// Pre-render all tweet content for client-side toggling
+const renderedTweetsByYear = await Promise.all(
+  tweetsByYear.map(async ([year, tweets]) => {
+    const rendered = await Promise.all(
+      tweets.map(async (tweet) => {
+        const { Content } = await render(tweet)
+        return { tweet, Content }
+      })
+    )
+    return [year, rendered] as [number, typeof rendered]
+  })
+)
 ---
 
-<div class='custom-tweet-list'>
-  {tweetsByYear.map(([year, tweets]) => (
-    <div class='tweets-year-group' data-year={year}>
-      <header class='year-header'>
-        <h2 class='year-label'>{year}</h2>
-        <span class='year-count'>{tweets.length} tweet{tweets.length !== 1 ? 's' : ''}</span>
-      </header>
-      
-      <div class='tweets-container'>
-        {tweets.map(async (tweet) => {
-          const { Content } = await render(tweet)
-          return (
-            <a href={`/tweets/${tweet.id}`} class='tweet-link'>
-              <CustomTweetCard tweet={tweet}>
-                <Content />
-              </CustomTweetCard>
-            </a>
-          )
-        })}
+<div class='tweet-year-list flex flex-col gap-8'>
+  {renderedTweetsByYear.map(([year, renderedTweets]) => {
+    const visibleCount = Math.min(initialCount, renderedTweets.length)
+    const hiddenCount = renderedTweets.length - visibleCount
+    const canShowMore = hiddenCount > 0
+
+    return (
+      <div class='relative mt-20 year-group' data-year={year} data-increment={increment}>
+          <h2
+            class='absolute -start-6 -top-18 z--1 text-9xl font-bold text-transparent opacity-12 dark:opacity-25'
+            style='-webkit-text-stroke-width:2px;-webkit-text-stroke-color:hsl(var(--foreground)/var(--un-text-opacity))'
+          >
+            <samp>{year}</samp>
+          </h2>
+          <p class='px-5 text-muted-foreground'>{renderedTweets.length} tweet{renderedTweets.length !== 1 ? 's' : ''}</p>
+
+        <div class='tweets-container flex flex-col gap-0'>
+          {renderedTweets.map(({ tweet, Content }, index) => (
+            <div
+              class='tweet-item'
+              data-index={index}
+              style={index >= initialCount ? 'display: none;' : ''}
+            >
+              <a href={`/tweets/post/${tweet.id}`} class='no-underline text-foreground'>
+                <CustomTweetCard tweet={tweet}>
+                  <Content />
+                </CustomTweetCard>
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {canShowMore && (
+          <button
+            class='show-more-btn'
+            onclick='showMoreTweets(this)'
+            data-remaining={hiddenCount}
+          >
+            Show {Math.min(increment, hiddenCount)} more →
+          </button>
+        )}
       </div>
-    </div>
-  ))}
+    )
+  })}
 </div>
 
-<style>
-  .custom-tweet-list {
-    @apply flex flex-col gap-8;
+<script>
+  function showMoreTweets(btn: HTMLButtonElement) {
+    const yearGroup = btn.closest('.year-group') as HTMLElement
+    const increment = parseInt(yearGroup.dataset.increment || '10')
+
+    // Find hidden items in this year's container
+    const hiddenItems = yearGroup.querySelectorAll<HTMLElement>(
+      '.tweet-item[style="display: none;"], .tweet-item[data-index][style*="display: none"]'
+    )
+
+    // Show next batch
+    let shown = 0
+    hiddenItems.forEach((item) => {
+      if (shown < increment) {
+        item.style.display = ''
+        item.classList.add('revealed')
+        shown++
+      }
+    })
+
+    // Update button text or hide
+    const remaining = yearGroup.querySelectorAll<HTMLElement>(
+      '.tweet-item[style="display: none;"], .tweet-item[data-index][style*="display: none"]'
+    )
+
+    if (remaining.length === 0) {
+      btn.style.display = 'none'
+    } else {
+      const toShow = Math.min(increment, remaining.length)
+      btn.textContent = `Show ${toShow} more →`
+    }
   }
 
-  .tweets-year-group {
+  // Attach to window for inline onclick
+  (window as any).showMoreTweets = showMoreTweets
+</script>
+
+<style>
+  .year-group {
     @apply relative;
   }
 
-  .year-header {
-    @apply flex items-baseline gap-3 mb-4 sticky top-0 bg-background/80 backdrop-blur-sm py-2 z-10;
-  }
-
-  .year-label {
-    @apply text-4xl font-bold text-transparent opacity-15 select-none;
-    -webkit-text-stroke: 1px hsl(var(--foreground) / var(--un-text-opacity, 1));
-  }
-
-  .year-count {
-    @apply text-muted-foreground text-sm uppercase tracking-wide;
-  }
-
   .tweets-container {
-    @apply flex flex-col gap-0;
+    @apply relative z-10;
   }
-  
-  .tweet-link {
-    @apply no-underline text-foreground;
-  }
-  
-  @media (min-width: 768px) {
-    .year-label {
-      @apply text-6xl;
-      position: absolute;
-      left: -3rem;
-      top: -1rem;
-      z-index: 0;
-      pointer-events: none;
-    }
 
+  .tweet-item {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Hide animation */
+  .tweet-item[style*="display: none"] {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Reveal animation */
+  .tweet-item.reevealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .show-more-btn {
+    @apply w-full py-3 px-4 mt-2 mb-4 rounded-lg bg-muted text-muted-foreground
+           text-sm font-medium transition-all duration-200 cursor-pointer
+           hover:bg-muted/80 hover:text-foreground active:scale-[0.98];
+  }
+
+  @media (min-width: 768px) {
     .year-header {
       @apply relative z-10;
     }

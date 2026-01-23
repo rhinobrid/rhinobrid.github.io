@@ -10,8 +10,6 @@ import config from '@/site-config'
 
 export const prerender = true
 
-const TWEETS_PER_PAGE = 10
-
 export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
   const allTweets = await getTweetsCollection()
   const allTweetsByDate = sortTweetsByDate(allTweets)
@@ -20,14 +18,14 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
   return uniqueTags.flatMap((tag) => {
     const taggedTweets = allTweetsByDate.filter(tweet => tweet.data.tags.includes(tag))
     return paginate(taggedTweets, {
-      pageSize: TWEETS_PER_PAGE,
+      pageSize: config.content.blogPageSize,
       params: { tag }
     })
   })
 }
 
 interface Props {
-  page: Page<CollectionEntry<'tweets'>>
+  page: Page<CollectionEntry<'microposts'>>
 }
 
 const { page } = Astro.props

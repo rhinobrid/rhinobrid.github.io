@@ -1,5 +1,5 @@
-import { glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
+import { glob } from 'astro/loaders'
 
 function removeDupsAndLowerCase(array: string[]) {
   if (!array.length) return array
@@ -40,8 +40,24 @@ const blog = defineCollection({
     })
 })
 
-// Define tweets collection
-const tweets = defineCollection({
+// Define docs collection
+const docs = defineCollection({
+  loader: glob({ base: './src/content/docs', pattern: '**/*.{md,mdx}' }),
+  schema: () =>
+    z.object({
+      title: z.string().max(60),
+      description: z.string().max(160),
+      publishDate: z.coerce.date().optional(),
+      updatedDate: z.coerce.date().optional(),
+      tags: z.array(z.string()).default([]).transform(removeDupsAndLowerCase),
+      draft: z.boolean().default(false),
+      // Special fields
+      order: z.number().default(999)
+    })
+})
+
+// Define microposts collection
+const microposts = defineCollection({
   loader: glob({ base: './src/content/tweets', pattern: '**/*.{md,mdx}' }),
   schema: () =>
     z.object({
@@ -53,4 +69,4 @@ const tweets = defineCollection({
     })
 })
 
-export const collections = { blog, tweets }
+export const collections = { blog, docs, microposts }

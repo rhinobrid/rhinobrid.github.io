@@ -1,0 +1,90 @@
+---
+/**
+ * Tweets Page
+ *
+ * Displays all tweets grouped by year, similar to the archives page.
+ *
+ * Features:
+ * - Year-based grouping
+ * - Tweet count display
+ * - Empty state handling
+ * - Clean, minimal layout
+ */
+
+import {
+  getTweetsCollection,
+  getUniqueTagsWithCount,
+  groupTweetsByYear,
+  sortTweetsByDate
+} from '@/utils/tweets'
+import CustomTweetList from '@/components/tweets/CustomTweetList.astro'
+import PageLayout from '@/layouts/BaseLayout.astro'
+import { Button, Icon } from 'astro-pure/user'
+
+export const prerender = true
+
+const allTweets = sortTweetsByDate(await getTweetsCollection())
+const tweetsByYear = groupTweetsByYear(allTweets)
+const uniqueTags = getUniqueTagsWithCount(allTweets).map(([tag]) => tag)
+const totalTweets = allTweets.length
+const totalYears = tweetsByYear.length
+
+const meta = {
+  description: `A collection of ${totalTweets} tweets`,
+  title: 'Tweets'
+}
+---
+
+<PageLayout {meta}>
+  <main class='mt-6 lg:mt-10'>
+    <header id='content-header' class='animate mb-8'>
+      <h1 class='text-3xl font-medium'>Tweets Archive</h1>
+      <p class='text-muted-foreground mt-2'>
+        {totalTweets} tweet{totalTweets !== 1 ? 's' : ''} across {totalYears} year{totalYears !== 1 ? 's' : ''}
+      </p>
+    </header>
+    
+    <div class='grid gap-y-16 sm:grid-cols-[3fr_1fr] sm:gap-x-8'>
+      <section id='tweets-feed' class='animate'>
+        {tweetsByYear.length === 0 ? (
+          <div class='empty-state'>
+            <p>No tweets yet.</p>
+            <p class='text-sm text-muted-foreground mt-1'>Check back soon!</p>
+          </div>
+        ) : (
+          <CustomTweetList {tweetsByYear} />
+        )}
+      </section>
+
+      {/* sidebar */}
+      {!!uniqueTags.length && (
+        <aside class='animate' id='sidebar'>
+          <h2 class='mb-4 flex items-center text-lg font-medium'>
+            <Icon name='tag-2' class='me-2' />
+            Tweet Tags
+          </h2>
+          <ul class='text-bgColor flex flex-wrap gap-2'>
+            {
+              uniqueTags.slice(0, 50).map((tag) => (
+                <li>
+                  <Button title={tag} href={`/tags/${tag}`} variant='pill' />
+                </li>
+              ))
+            }
+          </ul>
+          <span class='mt-4 block sm:text-end'>
+            <a aria-label='View all tweet tags' href='/tags' data-astro-prefetch>
+              View all →
+            </a>
+          </span>
+        </aside>
+      )}
+    </div>
+  </main>
+</PageLayout>
+
+<style>
+  .empty-state {
+    @apply text-center py-12 text-muted-foreground;
+  }
+</style>

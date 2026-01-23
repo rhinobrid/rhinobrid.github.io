@@ -36,9 +36,9 @@ export async function getStaticPaths() {
 }
 
 interface Props {
-  tweet: CollectionEntry<'tweets'>
-  prevTweet?: CollectionEntry<'tweets'>
-  nextTweet?: CollectionEntry<'tweets'>
+  tweet: CollectionEntry<'microposts'>
+  prevTweet?: CollectionEntry<'microposts'>
+  nextTweet?: CollectionEntry<'microposts'>
 }
 
 const { tweet, prevTweet, nextTweet } = Astro.props

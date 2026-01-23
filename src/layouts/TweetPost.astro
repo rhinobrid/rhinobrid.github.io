@@ -25,9 +25,9 @@ import config from 'virtual:config'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
-  tweet: CollectionEntry<'tweets'>
-  prevTweet?: CollectionEntry<'tweets'>
-  nextTweet?: CollectionEntry<'tweets'>
+  tweet: CollectionEntry<'microposts'>
+  prevTweet?: CollectionEntry<'microposts'>
+  nextTweet?: CollectionEntry<'microposts'>
 }
 
 const { tweet, prevTweet, nextTweet } = Astro.props
@@ -121,7 +121,7 @@ const nextDate = nextTweet ? getFormattedDate(nextTweet.data.publishDate, {
         {prevTweet && (
           <Button 
             title={`← Tweet from ${prevDate}`}
-            href={`/tweets/${prevTweet.id}`}
+            href={`/tweets/post/${prevTweet.id}`}
             variant='back'
             class='min-w-[140px]'
           />
@@ -132,7 +132,7 @@ const nextDate = nextTweet ? getFormattedDate(nextTweet.data.publishDate, {
         {nextTweet && (
           <Button 
             title={`Tweet from ${nextDate} →`}
-            href={`/tweets/${nextTweet.id}`}
+            href={`/tweets/post/${nextTweet.id}`}
             variant='ahead'
             class='min-w-[140px]'
           />

@@ -44,7 +44,7 @@ const canShowMore = hiddenCount > 0
       data-index={index}
       style={index >= initialCount ? 'display: none;' : ''}
     >
-      <a href={`/tweets/${tweet.id}`} class='tweet-link'>
+      <a href={`/tweets/post/${tweet.id}`} class='tweet-link'>
         <CustomTweetCard tweet={tweet}>
           <Content />
         </CustomTweetCard>
