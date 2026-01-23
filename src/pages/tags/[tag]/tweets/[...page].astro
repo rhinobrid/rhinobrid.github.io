@@ -36,20 +36,7 @@ const meta = {
   title: `Tag: #${tag} - Tweets`
 }
 
-const paginationProps = {
-  ...(page.url.prev && {
-    prevUrl: {
-      text: `← Previous`,
-      url: page.url.prev
-    }
-  }),
-  ...(page.url.next && {
-    nextUrl: {
-      text: `Next →`,
-      url: page.url.next
-    }
-  })
-}
+
 ---
 
 <PageLayout {meta}>
