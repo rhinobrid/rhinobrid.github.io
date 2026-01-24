@@ -28,7 +28,7 @@ export default defineConfig({
   site: 'https://rhinobrid.github.io',
   // Deploy to a sub path
   // https://astro-pure.js.org/docs/setup/deployment#platform-with-base-path
-  // base: '/astro-pure/',
+  //base: '/astro-pure/',
   trailingSlash: 'never',
   // root: './my-project-directory',
   server: { host: true },
@@ -36,7 +36,7 @@ export default defineConfig({
   // [Adapter]
   // https://docs.astro.build/en/guides/deploy/
   adapter: vercel(),
-  output: 'server',
+  output: 'static',
   // Local (standalone)
   // adapter: node({ mode: 'standalone' }),
   // output: 'server',
