@@ -17,6 +17,7 @@
  */
 
 import type { CollectionEntry } from 'astro:content'
+import { Image } from 'astro:assets'
 
 import { BackToTop } from 'astro-pure/components/pages'
 import { Button } from 'astro-pure/user'
@@ -60,6 +61,16 @@ const nextDate = nextTweet ? getFormattedDate(nextTweet.data.publishDate, {
   month: 'short',
   day: 'numeric'
 }) : null
+
+// Load avatar image using Astro's image processing
+const imagePath = config.logo.src
+const images = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/*.{jpeg,jpg,png,gif,avif,webp}'
+)
+if (!images[imagePath])
+  throw new Error(
+    `"${imagePath}" does not exist in glob: "src/assets/*.{jpeg,jpg,png,gif,avif,webp}"`
+  )
 ---
 
 <PageLayout 
@@ -74,8 +85,8 @@ const nextDate = nextTweet ? getFormattedDate(nextTweet.data.publishDate, {
     {/* Tweet Header - Author Info */}
     <header class='flex items-center gap-4 mb-8 pb-6 border-b border-border'>
       <div class='flex-shrink-0'>
-        <img 
-          src={config.logo.src} 
+        <Image 
+          src={images[imagePath]()} 
           alt={config.author}
           class='w-14 h-14 rounded-full object-cover border border-border'
           loading='eager'
