@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms/schema/sveltia-cms.json
+
+backend:
+  name: github
+  repo: rhinobrid/rhinobrid.github.io
+  branch: master
+
+media_folder: 'public/images'
+public_folder: '/images'
+
+collections:
+  # Blog Posts Collection
+  - name: blog
+    label: Blog Posts
+    label_singular: Blog Post
+    description: 'Manage your blog posts'
+    folder: src/content/blog
+    create: true
+    path: '{{year}}/{{month}}/{{slug}}'
+    slug: '{{slug}}'
+    fields:
+      - { label: Title, name: title, widget: string, required: true }
+      - {
+          label: Description,
+          name: description,
+          widget: text,
+          hint: 'Brief description for SEO and previews'
+        }
+      - {
+          label: Publish Date,
+          name: publishDate,
+          widget: datetime,
+          format: 'YYYY-MM-DD',
+          required: true
+        }
+      - {
+          label: Updated Date,
+          name: updatedDate,
+          widget: datetime,
+          format: 'YYYY-MM-DD',
+          hint: 'Leave empty if not updated'
+        }
+      - {
+          label: Language,
+          name: language,
+          widget: select,
+          options: ['English', '中文'],
+          default: 'English'
+        }
+      - { label: Tags, name: tags, widget: list, hint: 'Add tags separated by commas' }
+      - {
+          label: Draft,
+          name: draft,
+          widget: boolean,
+          default: false,
+          hint: "Save as draft (won't be published)"
+        }
+      - { label: Body, name: body, widget: markdown, required: true }
+
+  # Tweets/Microposts Collection
+  - name: tweets
+    label: Tweets
+    label_singular: Tweet
+    description: 'Manage your tweet-like microposts'
+    folder: src/content/tweets
+    create: true
+    path: '{{year}}/{{month}}/{{slug}}'
+    slug: '{{fields.publishDate | date("YYYY-MM-DDTHHmmss")}}'
+    fields:
+      - {
+          label: Publish Date,
+          name: publishDate,
+          widget: datetime,
+          format: 'YYYY-MM-DDTHH:mm:ss',
+          required: true
+        }
+      - { label: Tags, name: tags, widget: list, hint: 'Add tags for categorization' }
+      - {
+          label: Draft,
+          name: draft,
+          widget: boolean,
+          default: false,
+          hint: "Save as draft (won't be published)"
+        }
+      - { label: Content, name: body, widget: markdown, required: true }
+
+  # Documentation Collection
+  - name: docs
+    label: Documentation
+    label_singular: Documentation Page
+    description: 'Manage documentation pages'
+    folder: src/content/docs
+    create: true
+    slug: '{{slug}}'
+    fields:
+      - { label: Title, name: title, widget: string, required: true }
+      - {
+          label: Description,
+          name: description,
+          widget: text,
+          hint: 'Brief description for SEO and previews'
+        }
+      - {
+          label: Order,
+          name: order,
+          widget: number,
+          value_type: int,
+          default: 1,
+          hint: 'Order in navigation (lower = higher priority)'
+        }
+      - {
+          label: Draft,
+          name: draft,
+          widget: boolean,
+          default: false,
+          hint: "Save as draft (won't be published)"
+        }
+      - { label: Body, name: body, widget: markdown, required: true }
