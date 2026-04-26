@@ -1,16 +1,31 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, extname, resolve } from 'node:path'
 import process from 'node:process'
-
-import { globSync } from 'node:fs'
 
 const ROOT = process.cwd()
 const CONTENT_DIR = resolve(ROOT, 'src/content')
 const PUBLIC_DIR = resolve(ROOT, 'public')
 
-const MARKDOWN_FILES = globSync('**/*.{md,mdx}', { cwd: CONTENT_DIR }).map((relativePath) =>
-  resolve(CONTENT_DIR, relativePath)
-)
+function listMarkdownFiles(directory) {
+  const entries = readdirSync(directory, { withFileTypes: true })
+  const files = []
+
+  for (const entry of entries) {
+    const absolutePath = resolve(directory, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...listMarkdownFiles(absolutePath))
+      continue
+    }
+
+    if (!entry.isFile()) continue
+    if (!entry.name.endsWith('.md') && !entry.name.endsWith('.mdx')) continue
+    files.push(absolutePath)
+  }
+
+  return files
+}
+
+const MARKDOWN_FILES = listMarkdownFiles(CONTENT_DIR)
 
 const MARKDOWN_IMAGE_PATTERN = /!\[[^\]]*]\(([^)]+)\)/g
 
