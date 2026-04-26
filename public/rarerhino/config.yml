@@ -5,6 +5,18 @@ backend:
   repo: rhinobrid/rhinobrid.github.io
   branch: master
 
+media_libraries:
+      default:
+        config:
+          transformations:
+            raster_image:
+              format: webp
+              quality: 85
+              width: 1600
+              height: 1600
+          max_file_size: 5242880 # optional, 5MB
+          slugify_filename: true # optional
+
 media_folder: 'public/images'
 public_folder: '/images'
 
